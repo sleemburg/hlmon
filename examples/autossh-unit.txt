@@ -1,0 +1,38 @@
+* Install autossh
+
+ apt update && apt install autossh
+
+* Create a key pair
+
+ ssh-keygen -t ed25519 -b 384 -f /root/.ssh/id_ed25519_autossh -P ''
+
+* Add the public key on the target hosts to the user@host:.ssh/authorized_keys
+
+ ( 
+   printf 'command="/bin/true" '
+   cat  /root/.ssh/id_ed25519_autossh.pub
+ ) | ssh user@host '>> .ssh/authorized_keys'
+
+* create a unit-file for user@host
+
+export THEHOST=the.remote.host
+export THEUSER=autossh
+IP=$(host $THEHOST|awk '{if ($3 == "has") print $4}')
+export IP=${IP:-$THEHOST}
+
+cat << EOD | sed -e "s/HOST/$THEHOST/g" -e "s/IP/$IP/g" -e "s/USER/$THEUSER/g" > /etc/systemd/system/autossh@${THEHOST}.service
+[Unit]
+Description=Keeps a tunnel to 'HOST' open
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/autossh -M 0 -Nq -o "ServerAliveInterval 60" -o "ServerAliveCountMax 3" -R 2222:127.0.0.1:22 -i root/.ssh/id_ed25519_autossh USER@IP
+
+[Install]
+WantedBy=multi-user.target
+EOD
+
+systemctl enable autossh@${THEHOST}.service
+systemctl start autossh@${THEHOST}.service
+

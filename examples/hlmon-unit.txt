@@ -1,0 +1,16 @@
+cat << EOD > /etc/systemd/system/hlmon.service
+[Unit]
+Description=Monitors the Huawei HiLink modem
+After=network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/php /root/hlmon/hlmon.php
+
+[Install]
+WantedBy=multi-user.target
+EOD
+
+systemctl enable hlmon.service
+systemctl start hlmon.service
+
