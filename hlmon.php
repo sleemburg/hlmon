@@ -37,6 +37,15 @@ if (is_array($options) && count($options) > 0)
 
     case 'monitor':
         break;
+
+    case 'connect':
+        $mon->connect();
+        break;
+    
+    case 'reset':
+    case 'disconnect':
+        $mon->disconnect();
+        break;
     
     default:
         echo "Unexpected value for option -c ({$options['c']})\n";

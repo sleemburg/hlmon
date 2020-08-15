@@ -15,7 +15,6 @@ class Hlmon extends Hlbase
     private $lastCommand    = '';
     private $process        = NULL;
     private $pipes          = [];
-    private $route_ret      = 0;
 
     const STATE_VOID        = 0;
     const STATE_IDLE        = 1;
@@ -90,6 +89,8 @@ class Hlmon extends Hlbase
 
                 $this->handleRequest($action);
             }
+            $this->reap();
+
             sleep($this->timeout);
         }
     }
@@ -273,7 +274,7 @@ class Hlmon extends Hlbase
             return;
         }
 
-        $this->error('Starting the command ['.$this->command.'] failed');
+        $this->error('Starting the command failed');
 
         $this->disconnect();
     }
@@ -332,16 +333,22 @@ class Hlmon extends Hlbase
         || trim($this->config['command']) == '')
             return TRUE;
 
-        $descriptorspec = [
-             0 => ["pipe", "r"]
-            ,1 => ["pipe", "w"]
-            ,2 => ["pipe", "w"]
-             ];
+        $pid = pcntl_fork();
+        switch ($pid)
+        {
+        case 0: // child
+            $this->dbg("Spawining {$this->config['command']}");
+            exec($this->config['command']);
 
-        $this->process = proc_open($this->config['command']
-                    , $descriptorspec, $this->pipes);
+            // the child will only reach this point on exec failure
+            exit(255);
 
-        return is_resource($this->process);
+        default: // parent
+            $this->process = $pid;
+
+            $this->reap();
+            break;
+        }
     }
 
     protected function checkCommand()
@@ -352,33 +359,15 @@ class Hlmon extends Hlbase
         || trim($this->config['command']) == '')
             return TRUE;
 
-        if (!is_resource($this->process))
-            return -1;
-
-        $status = proc_get_status($this->process);
-        if ($status === FALSE)
-            return -1;
-
-        if ($status['running'])
-            return TRUE;
-
-        return $status['exitcode'];
+        return posix_kill($this->process, 0);
     }
 
     protected function stopCommand()
     {
-        if (!is_resource($this->process))
+        if ($this->process === NULL)
+            return TRUE;
 
-        for($i = 0; $i < count($this->pipes); $i++)
-            fclose($this->pipes[$i]);
-
-        $this->pipes = [];
-
-        $ret = proc_terminate($this->process);
-
-        $this->process = NULL;
-
-        return $ret;
+        return posix_kill($this->process, SIGTERM);
     }
 
     protected function system($cmd)
@@ -392,5 +381,15 @@ class Hlmon extends Hlbase
         }
         $this->dbg("command returned {$return}");
         return $return;
+    }
+
+    protected function reap()
+    {
+        // any children dead?
+        while (($pid = pcntl_waitpid(-1, $status, WNOHANG)) > 0)
+        {
+            $this->log("Child process {$pid} exited with {$status}");
+            // remove the pid from the process list slots
+        }
     }
 }
