@@ -179,7 +179,8 @@ trait tCurl
      */
     protected function setError($err)
     {
-        $this->lastError = $err;
+        $method = debug_backtrace()[1]['function'];
+        $this->lastError = $method.' : '.$err;
     }
 
     private function curl(string $method, string $scheme, string $uri, $data=NULL)

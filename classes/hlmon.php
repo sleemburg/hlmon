@@ -136,7 +136,7 @@ class Hlmon extends Hlbase
             break;
 
         case self::ACT_STATUS:
-            ; // ok
+            $this->status();
             break;
         }
         $this->dbg('Prev state: '.$state.', current state: '.$this->getState());
@@ -197,7 +197,7 @@ class Hlmon extends Hlbase
             return self::ACT_IGNORE;
         }
 
-        $m = '['.$msg['Content'].'] From '.$msg['Phone'].' on '.$msg['Date'];
+        $m = $msg['Content'].' [From '.$msg['Phone'].' on '.$msg['Date'].']';
         foreach ($this->config['relaybook'] as $phone => $options)
         {
             if ($phone == $msg['Phone'] 
@@ -305,7 +305,7 @@ class Hlmon extends Hlbase
             ? 'connected' : 'disconnected').', last nr: '.
             $this->lastPhonenumber.' last cmd: '.$this->lastCommand;
 
-        $this->hl->sendSMS($this->lastPhonenumber, $msg);
+        $this->sendSMS($this->lastPhonenumber, $msg);
     }
 
     protected function getState()

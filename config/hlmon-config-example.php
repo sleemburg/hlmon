@@ -8,6 +8,19 @@ $config['host'] = '192.168.8.1';
 
 /* 
 | ------------------------------------------------------------------------------
+| modem, which modem type are we using
+| ------------------------------------------------------------------------------
+| Currently supported modems:
+| - E3372
+| - E3372h-320
+| - E3531
+| 
+| If no modem is specified then the DEFAULT is used, which is E3372
+*/
+$config['modem'] = 'DEFAULT';
+
+/* 
+| ------------------------------------------------------------------------------
 | countryprefix, the telephony country prefix including the starting +
 | ------------------------------------------------------------------------------
 */

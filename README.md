@@ -24,6 +24,7 @@ disable it as soon as it is not needed anymore
 
  * E3372: Huawei Technologies Co., Ltd. E33372 LTE/UMTS/GSM HiLink Modem/Networkcard
  * E3372h-320: Huawei Technologies Co., Ltd. E353/E3131
+ * E3531: Huawei Technologies Co., 
 
 # Requirements
 
@@ -59,6 +60,12 @@ user, as long as the user is able to run certain commands, for example with the
 help of sudo.
 
 Note that I run it as root within unpriviliged, dedicated Proxmox containers.
+
+Then copy the hlmon/config/hlmon-config-example.php file to hlmon/config/hlmon.php
+and edit the hlmon/config/hlmon.php so it reflects your situation. The example
+config file is annotated and should be self documenting.
+
+The hlmon/examples contains some example scripts that may be of use.
 
 # Modem mode of operation
 
@@ -105,6 +112,10 @@ I have tested the code on my own 2 Huawei USB modems, these are:
     Softwareversion: 10.0.3.1(H192SP1C983)
     
     lsusb output: ID 12d1:14db Huawei Technologies Co., Ltd. E353/E3131
+
+ * Modem of a friend
+
+    Device name: E3531
 
 # Usage scenarios
 
