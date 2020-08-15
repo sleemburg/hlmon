@@ -27,15 +27,18 @@ class Hlmon extends Hlbase
     const ACT_NOOP          = 4;
     const ACT_IGNORE        = 5;
     const ACT_RESEND        = 6;
+    const ACT_RESET         = 7;
 
     const STR_CONNECT       = 'connect';
     const STR_DISCONNECT    = 'disconnect';
+    const STR_RESET         = 'reset';
     const STR_STATUS        = 'status';
     const STR_SMS           = 'sms';
 
     const cmdmap = [
          self::STR_CONNECT      => self::ACT_CONNECT
         ,self::STR_DISCONNECT   => self::ACT_DISCONNECT
+        ,self::STR_RESET        => self::ACT_RESET
         ,self::STR_STATUS       => self::ACT_STATUS
     ];
 
@@ -44,6 +47,9 @@ class Hlmon extends Hlbase
         parent::__construct(strtolower(basename(__FILE__)), $host);
     
         $this->setState(self::STATE_IDLE);
+
+        // on startup disconnect from any leftover connected state
+        $this->disconnect();
     }
 
     public function run()
@@ -126,15 +132,16 @@ class Hlmon extends Hlbase
             $this->connect();
             break;
 
+        case self::ACT_RESET:
         case self::ACT_DISCONNECT:
-            if ($state != self::STATE_CONNECTED)
+            if ($action != self::ACT_RESET && $state != self::STATE_CONNECTED)
             {
                 $this->log('Already disconnected, ignoring request.');
                 break;
             }
             $this->disconnect();
             break;
-
+    
         case self::ACT_STATUS:
             $this->status();
             break;
@@ -245,17 +252,19 @@ class Hlmon extends Hlbase
         if (isset($this->config['route']) 
         && isset($this->config['route']['up']))
         {
-            $r = system($this->config['route']['up'], $this->route_ret);
-            if ($r === FALSE)
+            $cmds = $this->config['route']['up'];
+            if (!is_array($cmds))
+                $cmds = [ $cmds ];
+
+            foreach($this->config['route']['up'] as $cmd)
             {
-                $this->error('command '.$this->config['route']['up'].' failed');
-                $this->disconnect();
-                return;
+                if ($this->system($cmd) === FALSE)
+                {
+                    $this->disconnect();
+                    return;
+                }
             }
         }
-
-        // get statistics
-        // XXX print_r($this->hl->status());
 
         // spawn and monitor the connection command
         if ($this->startCommand())
@@ -278,23 +287,20 @@ class Hlmon extends Hlbase
         if (isset($this->config['route']) 
         && isset($this->config['route']['down']))
         {
-            $r = system($this->config['route']['down'], $this->route_ret);
-            if ($r === FALSE)
-                $this->error('command '.$this->config['route']['down'].' failed');
+            $cmds = $this->config['route']['down'];
+            if (!is_array($cmds))
+                $cmds = [ $cmds ];
+
+            foreach($this->config['route']['down'] as $cmd)
+                $this->system($cmd);
         }
 
         // disconnect the modem
-
         if (($this->config['switchdata'] ?? TRUE)
         &&  !$this->hl->dataSwitch('off'))
             $this->error('Could not disable mobile data on the modem');
 
         $this->setState(self::STATE_IDLE);
-
-        // get statistics
-
-        // XXX print_r($this->hl->statistics());
-        // XXX print_r($this->hl->status());
     }
 
     protected function status()
@@ -373,5 +379,18 @@ class Hlmon extends Hlbase
         $this->process = NULL;
 
         return $ret;
+    }
+
+    protected function system($cmd)
+    {
+        $this->dbg("executing {$cmd}");
+        $r = system($cmd, $return);
+        if ($r === FALSE)
+        {
+            $this->error("command {$cmd} failed with return value {$return}");
+            return FALSE;
+        }
+        $this->dbg("command returned {$return}");
+        return $return;
     }
 }

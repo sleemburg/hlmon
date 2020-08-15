@@ -85,6 +85,9 @@ $config['command'] = NULL;
 | - connect        : start the Cellulair connection and start the 
 |                    'command' (global)
 | - disconnect     : stop the Cellulair connection modus
+| - reset          : stop the Cellulair connection modus whatever state hlmon
+|                    is in. This can be needed after a restart while still
+|                    connected.
 | - status         : Send a SMS with the current status back
 | - command        : see the global 'command'. If this is
 |                    set, then it will overrule the global setting
@@ -93,6 +96,7 @@ $config['phonebook'] = [
 	'+316XXXXXXXX' => [
 		'connect' => 'connect'
 		,'disconnect' => 'disconnect'
+		,'reset' => 'reset'
 		,'status' => 'status'
 	]
 ];
