@@ -39,6 +39,33 @@ performance is not an issue with this code and setup.
 As I want to become a fluent python coder, I will rewrite the code in python as
 soon as I get to it.
 
+# Installation
+
+Clone this repository to the system you want to run it on. It can run as any
+user, as long as the user is able to run certain commands, for example with the
+help of sudo.
+
+Note that I run it as root within unpriviliged, dedicated Proxmox containers.
+
+Then copy the hlmon/config/hlmon-config-example.php file to hlmon/config/hlmon.php
+and edit the hlmon/config/hlmon.php so it reflects your situation. The example
+config file is annotated and should be self documenting.
+
+The hlmon/examples contains some example scripts that may be of use.
+
+So in short:
+
+    [ -d /opt ] || mkdir -m02775 /opt
+    cd /opt && git clone https://github.com/sleemburg/hlmon.git
+    cd hlmon
+    cp config/hlmon-config-example.php config/hlmon.php
+    vi config/hlmon.php # adjust to you liking
+
+After that the systemd hlmon unit file can be installed and enabled with
+
+    bash examples/hlmon-unit.sh
+
+
 # Known Issues
 
 I am still working on multiple 'route' up/down commands and multiple 'command' 
@@ -53,19 +80,6 @@ php fork/exec. But as I do not use it, I will deal with it as soon as required.
  * Run hlmon to enable mobile data and change the routing
  * Use ip addresses if DNS can become unavailable when an outage occurs
 
-# Installation
-
-Clone this repository to the system you want to run it on. It can run as any
-user, as long as the user is able to run certain commands, for example with the
-help of sudo.
-
-Note that I run it as root within unpriviliged, dedicated Proxmox containers.
-
-Then copy the hlmon/config/hlmon-config-example.php file to hlmon/config/hlmon.php
-and edit the hlmon/config/hlmon.php so it reflects your situation. The example
-config file is annotated and should be self documenting.
-
-The hlmon/examples contains some example scripts that may be of use.
 
 # Modem mode of operation
 
