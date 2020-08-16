@@ -32,7 +32,7 @@ $config['countryprefix'] = '+31';
 | ------------------------------------------------------------------------------
 | can be TRUE or FALSE, if not set then it defaults to TRUE
 */
-$config['mobiledata'] = TRUE;
+$config['switchdata'] = TRUE;
 
 /* 
 | ------------------------------------------------------------------------------
