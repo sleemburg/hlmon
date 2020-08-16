@@ -282,8 +282,8 @@ class Hlmon extends Hlbase
     protected function disconnect()
     {
         $this->dbg(__FUNCTION__);
-        if (is_resource($this->process))
-            $this->stopCommand();
+
+        $this->stopCommand();
 
         if (isset($this->config['route']) 
         && isset($this->config['route']['down']))
@@ -330,15 +330,21 @@ class Hlmon extends Hlbase
         // no command always succeeds
         if (!isset($this->config['command']) 
         || $this->config['command'] == NULL
-        || trim($this->config['command']) == '')
+        || !is_array($this->config['command'])
+        && trim($this->config['command']) == '')
             return TRUE;
 
         $pid = pcntl_fork();
         switch ($pid)
         {
         case 0: // child
-            $this->dbg("Spawining {$this->config['command']}");
-            exec($this->config['command']);
+            $cmds = $this->config['command'];
+
+            if ($cmds['path'] ?? FALSE)
+                $this->pexec($cmds);
+            
+            $this->dbg("Spawining {$cmds}");
+            pcntl_exec($cmds);
 
             // the child will only reach this point on exec failure
             exit(255);
@@ -346,7 +352,7 @@ class Hlmon extends Hlbase
         default: // parent
             $this->process = $pid;
 
-            $this->reap();
+            return $this->checkCommand();
             break;
         }
     }
@@ -356,7 +362,8 @@ class Hlmon extends Hlbase
         // no command always succeeds
         if (!isset($this->config['command']) 
         || $this->config['command'] == NULL
-        || trim($this->config['command']) == '')
+        || !is_array($this->config['command'])
+        && trim($this->config['command']) == '')
             return TRUE;
 
         return posix_kill($this->process, 0);
@@ -381,6 +388,22 @@ class Hlmon extends Hlbase
         }
         $this->dbg("command returned {$return}");
         return $return;
+    }
+
+    protected function pexec($cmd)
+    {
+        $this->dbg("Spawining {$cmd['path']}");
+
+        if(($cmd['args'] ?? FALSE) && ($cmd['envs'] ?? FALSE))
+            pcntl_exec($cmd['path'], $cmd['args'], $cmd['envs']);
+                        
+        else if(($cmd['args'] ?? FALSE))
+            pcntl_exec($cmd['path'], $cmd['args']);
+        else 
+            pcntl_exec($cmd['path']);
+
+        // failed to exec
+        exit(255);
     }
 
     protected function reap()
