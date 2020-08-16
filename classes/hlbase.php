@@ -45,7 +45,7 @@ abstract class Hlbase
         if (!is_dir($this->storage) && !mkdir($this->storage, 02775, TRUE))
             throw new RuntimeException('Cannot create '.$this->storage);
 
-        $this->hl = new Hilink();
+        $this->hl = new Hilink($options['modem'] ?? 'DEFAULT');
         $this->hl->setDomain($host);
 
         if (getenv("CURL_DEBUG") !== FALSE)
