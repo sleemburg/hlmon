@@ -65,9 +65,24 @@ $config['route'] = [
 | monitor the command.
 | 
 | The command may be NULL, for example if only the routing table needs to
-| be manipulated. It may be a single command or an array of commands.
+| be manipulated. Else it must be an array with 'path', an optional args array
+| and an optional envs array
 */
 $config['command'] = NULL;
+/*
+$config['command'] = [
+    'path' => '/usr/bin/autossh',
+    'args' => [ '-M', 0
+                , '-o', 'ServerAliveInterval 15'
+                , '-o', 'ServerAliveCountMax 3'
+                , '-o', 'IdentitiesOnly yes'
+                , '-o', 'IdentityFile /root/.ssh/id_ed25519' 
+                , '-qNR', '4444:127.0.0.1:22'
+                , 'autossh@1.2.3.4'
+            ],
+    'envs'   => NULL
+];
+*/
 
 /* 
 | ------------------------------------------------------------------------------
