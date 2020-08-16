@@ -9,11 +9,12 @@ User=root
 Type=simple
 KillMode=process
 Restart=on-failure
-ExecStart=/usr/bin/php /root/hlmon/hlmon.php
+ExecStart=/usr/bin/php /opt/hlmon/hlmon.php
 
 [Install]
 WantedBy=multi-user.target
 EOD
 
+systemctl daemon-reload
 systemctl enable hlmon.service
 systemctl start hlmon.service

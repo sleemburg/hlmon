@@ -22,17 +22,21 @@ abstract class Hlbase
     {
         if (PHP_SAPI !== 'cli' && !defined('STDIN'))
             throw new RuntimeException('CLI Only');
+
         /*
         if (self::already_running())
             throw new RuntimeException('I am already instantiated..');
-
          */
+
         $conffile = __DIR__.'/../config/'.$conffile;
         if (file_exists($conffile))
         {
             require_once $conffile;
             $this->config =& $config;
         }
+
+        openlog($this->config['logname'] ?? 'hlmon', LOG_NDELAY|LOG_PID, LOG_DAEMON);
+
         if ($host === NULL && array_key_exists('host', $this->config))
             $host = $this->config['host'];
 
@@ -45,8 +49,8 @@ abstract class Hlbase
         if (!is_dir($this->storage) && !mkdir($this->storage, 02775, TRUE))
             throw new RuntimeException('Cannot create '.$this->storage);
 
-        $this->hl = new Hilink();
-        $this->hl->setDomain($host);
+        $modem = ($this->config['modem'] ?? 'DEFAULT');
+        $this->hl = new Hilink(['modem' => $modem]);
 
         if (getenv("CURL_DEBUG") !== FALSE)
             $this->hl->setDebugCurl(TRUE);
@@ -54,9 +58,10 @@ abstract class Hlbase
         if (($this->config['debug'] ?? NULL) !== NULL)
             $this->setDebug($this->config['debug']);
     
-        $this->hl->getSesInfo();
+        $this->log("Loaded driver for modem {$modem}");
 
-        openlog($this->config['logname'] ?? 'hlmon', LOG_NDELAY|LOG_PID, LOG_DAEMON);
+        $this->hl->setDomain($host);
+        $this->hl->getSesInfo();
     }
 
     abstract public function run();
