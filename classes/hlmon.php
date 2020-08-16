@@ -8,6 +8,7 @@
 
 require_once __DIR__.'/hilink.php';
 require_once __DIR__.'/hlbase.php';
+require_once __DIR__.'/argparser.php';
 
 class Hlmon extends Hlbase
 {
@@ -57,7 +58,6 @@ class Hlmon extends Hlbase
     {
         while (!$this->stopRunning)
         {
-            $this->reap();
 
             if ($this->state == self::STATE_CONNECTED
             && ($ret = $this->checkCommand() !== TRUE))
@@ -65,6 +65,9 @@ class Hlmon extends Hlbase
                 $this->dbg('Command stopped with exitcode: '.$ret);
                 $this->startCommand();
             }
+
+            // collect all exit statuses of the once that passed away..
+            $this->reap();
 
             // are there manual commands to perform?
             if (is_file(self::CMD_FILE))
@@ -370,12 +373,8 @@ class Hlmon extends Hlbase
 
             $cmds = $this->config['command'];
 
-            if ($cmds['path'] ?? FALSE)
-                $this->pexec($cmds);
+            $this->pexec($cmds);
             
-            $this->dbg("Spawning {$cmds}");
-            pcntl_exec($cmds);
-
             // the child will only reach this point on exec failure
             exit(255);
 
@@ -423,6 +422,18 @@ class Hlmon extends Hlbase
 
     protected function pexec($cmd)
     {
+        // just a string, then compose path and args
+        if (!isset($cmd['path']))
+        {
+            $o = new ArgvParser($cmd);
+            $a = $o->parse();
+            $path = $a[0];
+            $args = array_splice($a, -(count($a)-1));
+            $cmd = [ 'path' => $path, 'args' => $args ];
+
+            // garbage collect
+            $o = NULL;
+        }
         $this->dbg("Spawning {$cmd['path']}");
 
         if(($cmd['args'] ?? NULL) !== NULL
