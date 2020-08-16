@@ -34,6 +34,8 @@ class Hlmon extends Hlbase
     const STR_STATUS        = 'status';
     const STR_SMS           = 'sms';
 
+    const CMD_FILE          = __DIR__.'/../commands.txt';
+
     const cmdmap = [
          self::STR_CONNECT      => self::ACT_CONNECT
         ,self::STR_DISCONNECT   => self::ACT_DISCONNECT
@@ -55,11 +57,36 @@ class Hlmon extends Hlbase
     {
         while (!$this->stopRunning)
         {
+            $this->reap();
+
             if ($this->state == self::STATE_CONNECTED
             && ($ret = $this->checkCommand() !== TRUE))
             {
                 $this->dbg('Command stopped with exitcode: '.$ret);
                 $this->startCommand();
+            }
+
+            // are there manual commands to perform?
+            if (is_file(self::CMD_FILE))
+            {
+                if (($fh = fopen(self::CMD_FILE, 'r')) !== FALSE)
+                {
+                    // remove the file 
+                    unlink(self::CMD_FILE);
+
+                    // read the commands and execute them
+                    while (($cmd = fgets($fh)) !== FALSE)
+                    {
+                        $cmd = trim($cmd);
+                        foreach (self::cmdmap as $key => $action)
+                            if ($cmd == $key)
+                            {
+                                $this->log("Handling command file cmd {$cmd}");
+                                $this->handleRequest($action);
+                            }
+                    }
+                    fclose($fh);
+                }
             }
 
             if (($count = $this->hl->smsCount()) < 1)
@@ -89,7 +116,6 @@ class Hlmon extends Hlbase
 
                 $this->handleRequest($action);
             }
-            $this->reap();
 
             sleep($this->timeout);
         }
@@ -257,7 +283,7 @@ class Hlmon extends Hlbase
             if (!is_array($cmds))
                 $cmds = [ $cmds ];
 
-            foreach($this->config['route']['up'] as $cmd)
+            foreach($cmds as $cmd)
             {
                 if ($this->system($cmd) === FALSE)
                 {
@@ -292,7 +318,7 @@ class Hlmon extends Hlbase
             if (!is_array($cmds))
                 $cmds = [ $cmds ];
 
-            foreach($this->config['route']['down'] as $cmd)
+            foreach($cmds as $cmd)
                 $this->system($cmd);
         }
 
@@ -338,12 +364,16 @@ class Hlmon extends Hlbase
         switch ($pid)
         {
         case 0: // child
+            // wait for modem and routes to settle...
+
+            sleep(5);
+
             $cmds = $this->config['command'];
 
             if ($cmds['path'] ?? FALSE)
                 $this->pexec($cmds);
             
-            $this->dbg("Spawining {$cmds}");
+            $this->dbg("Spawning {$cmds}");
             pcntl_exec($cmds);
 
             // the child will only reach this point on exec failure
@@ -360,10 +390,7 @@ class Hlmon extends Hlbase
     protected function checkCommand()
     {
         // no command always succeeds
-        if (!isset($this->config['command']) 
-        || $this->config['command'] == NULL
-        || !is_array($this->config['command'])
-        && trim($this->config['command']) == '')
+        if ($this->process === NULL)
             return TRUE;
 
         return posix_kill($this->process, 0);
@@ -374,7 +401,11 @@ class Hlmon extends Hlbase
         if ($this->process === NULL)
             return TRUE;
 
-        return posix_kill($this->process, SIGTERM);
+        $ret = posix_kill($this->process, SIGTERM);
+
+        $this->process = NULL;
+
+        return $ret;
     }
 
     protected function system($cmd)
@@ -392,12 +423,13 @@ class Hlmon extends Hlbase
 
     protected function pexec($cmd)
     {
-        $this->dbg("Spawining {$cmd['path']}");
+        $this->dbg("Spawning {$cmd['path']}");
 
-        if(($cmd['args'] ?? FALSE) && ($cmd['envs'] ?? FALSE))
+        if(($cmd['args'] ?? NULL) !== NULL
+        && ($cmd['envs'] ?? NULL) !== NULL)
             pcntl_exec($cmd['path'], $cmd['args'], $cmd['envs']);
                         
-        else if(($cmd['args'] ?? FALSE))
+        else if(($cmd['args'] ?? NULL) !== NULL)
             pcntl_exec($cmd['path'], $cmd['args']);
         else 
             pcntl_exec($cmd['path']);

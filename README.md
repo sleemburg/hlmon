@@ -65,21 +65,16 @@ After that the systemd hlmon unit file can be installed and enabled with
 
     bash examples/hlmon-unit.sh
 
-
 # Known Issues
 
-I am still working on multiple 'route' up/down commands and multiple 'command' 
-configurations.
-
-Also the 'command' monitoring is not working as should, so I will rewrite that using
-php fork/exec. But as I do not use it, I will deal with it as soon as required.
+Sometimes the connect script fails because of timing issues in setting up the rest
+of the connection. Tracking and restarting of the command needs to be improved.
 
 # Recomended setup
 
  * Run autossh to connect to your reverse shell target
  * Run hlmon to enable mobile data and change the routing
  * Use ip addresses if DNS can become unavailable when an outage occurs
-
 
 # Modem mode of operation
 
@@ -106,11 +101,11 @@ I have tested the code on my own 2 Huawei USB modems, these are:
     This one has a prepaid SIM in it, so mobile data needs to be
    switched on and off every time a connection is required.
 
-    Device name:	E3372
+    Device name:        E3372
    
-    Hardware version:	CL2E3372HM
+    Hardware version:   CL2E3372HM
    
-    Software version:	22.317.01.00.778
+    Software version:   22.317.01.00.778
 
     lsusb output: ID 12d1:14dc Huawei Technologies Co., Ltd. E33372 LTE/UMTS/GSM HiLink Modem/Networkcard
 
@@ -130,6 +125,18 @@ I have tested the code on my own 2 Huawei USB modems, these are:
  * Modem of a friend
 
     Device name: E3531
+
+# Testing without sending an sms
+
+The basic commands: {connect, disconnect, reset} can be tested by echoing the
+command to the hlmon directory into a file named commands.txt. For example to force
+a connect:
+
+    echo connect > /opt/hlmon/commands.txt
+
+And to have it disconnect again:
+
+    echo disconnect > /opt/hlmon/commands.txt
 
 # Usage scenarios
 
