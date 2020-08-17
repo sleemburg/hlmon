@@ -113,6 +113,17 @@ class Hilink
     }
     
     /**
+     * Sets curl debug on or off
+     * 
+     * @param Boolean
+     */
+    public function setDebugCurl($on=TRUE)
+    {
+        $this->driver->setDebugCurl($on);
+    }
+
+
+    /**
      * Returns the last Error msg, if any
      * 
      * @return String
