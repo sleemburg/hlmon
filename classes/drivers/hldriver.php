@@ -218,7 +218,7 @@ abstract class Hldriver implements Http, iCurl
 
     public function getSesInfo()
     {
-        $api = self::ENDPOINTS[$this->apiVersion]['sesTokInfo'];
+        $api = static::ENDPOINTS[$this->apiVersion]['sesTokInfo'];
         if (($data = $this->curl(self::GET, self::SCHEME, $api)) === FALSE)
             return FALSE;
 
@@ -237,7 +237,7 @@ abstract class Hldriver implements Http, iCurl
 
     protected function getCmd($cmd)
     {
-        $api = self::ENDPOINTS[$this->apiVersion][$cmd] ?? NULL;
+        $api = static::ENDPOINTS[$this->apiVersion][$cmd] ?? NULL;
         if ($api === NULL)
             return FALSE;
 
@@ -253,7 +253,7 @@ abstract class Hldriver implements Http, iCurl
 
     protected function postCmd($cmd, $data)
     {
-        $api = self::ENDPOINTS[$this->apiVersion][$cmd] ?? NULL;
+        $api = static::ENDPOINTS[$this->apiVersion][$cmd] ?? NULL;
         if ($api === NULL)
             return FALSE;
 
