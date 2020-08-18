@@ -43,7 +43,8 @@ if (is_array($options) && count($options) > 0)
     case 'reset':
         $cmd = 'echo '.strtolower(trim($options['c'])).' > '.__DIR__.'/commands.txt';
 
-        // put the command in the commands file
+        // put the command in the commands file, so that hlmon can pick it up
+        // and update it's stat accordingly
         `{$cmd}`;
 
         exit;

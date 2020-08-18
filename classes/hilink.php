@@ -72,6 +72,11 @@ class Hilink
         return $this->driver->deleteSMS($id);
     }
 
+    public function monthStatistics()
+    {
+        return $this->driver->monthStatistics();
+    }
+
     public function statistics()
     {
         return $this->driver->statistics();
