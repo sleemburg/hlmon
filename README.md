@@ -65,11 +65,6 @@ After that the systemd hlmon unit file can be installed and enabled with
 
     bash examples/hlmon-unit.sh
 
-# Known Issues
-
-Sometimes the connect script fails because of timing issues in setting up the rest
-of the connection. Tracking and restarting of the command needs to be improved.
-
 # Recomended setup
 
  * Run autossh to connect to your reverse shell target
