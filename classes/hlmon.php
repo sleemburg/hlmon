@@ -243,6 +243,32 @@ class Hlmon extends Hlbase
                 $this->log('Not relaying to sender '.$phone);
                 continue;
             }
+            // only relay for some senders?
+            if (is_array($options['senders'] ?? NULL))
+            {
+                $match = FALSE;
+                foreach($options['senders'] as $sender)
+                {
+                    $pattern = trim($sender);
+                    if (($negate = $pattern{0} === '!'))
+                        $pattern = substr($pattern, 1);
+
+                    if ($match = $pattern === '*'
+                    || ($match = preg_match('/^\\'.$pattern.'$/', $msg['Phone'])))
+                    {
+                        $match = $match && !$negate;
+                        break;
+                    }
+                }
+                
+                if (!$match)
+                {
+                    $this->log('Not relaying to '.$phone
+                              .' from '.$msg['Phone'].' based on sender pattern');
+                    continue;
+                }
+            }
+
             foreach ($options['methods'] as $method)
                 switch (strtolower(trim($method)))
                 {

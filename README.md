@@ -65,6 +65,13 @@ After that the systemd hlmon unit file can be installed and enabled with
 
     bash examples/hlmon-unit.sh
 
+# Commands
+
+There are two 'commands':
+
+ * /opt/hlmon/hlmon.php : this is the monitoring code
+ * /opt/hlmon/hlcmd.php : this is the cli for sending manual sms and (dis)connecting manually
+
 # Recomended setup
 
  * Run autossh to connect to your reverse shell target

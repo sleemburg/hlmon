@@ -12,3 +12,7 @@ commands.txt
 
 # I always use x named files for testing...
 x.php
+
+# vi swap files
+
+*.swp

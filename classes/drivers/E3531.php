@@ -14,14 +14,15 @@ class E3531 extends Hldriver
     const VERSION      = '0.1';    
     const ENDPOINTS    = [
         1 => [
-             'sesTokInfo'   => 'api/webserver/SesTokInfo'
-            ,'smsCount'     => 'api/sms/sms-count'
-            ,'smsList'      => 'api/sms/sms-list'
-            ,'deleteSMS'    => 'api/sms/delete-sms'
-            ,'sendSMS'      => 'api/sms/send-sms'
-            ,'statistics'   => '/api/monitoring/traffic-statistics'
-            ,'status'       => '/api/monitoring/status'
-            ,'dataSwitch'   => '/api/dialup/dial'
+             'sesTokInfo'       => 'api/webserver/SesTokInfo'
+            ,'smsCount'         => 'api/sms/sms-count'
+            ,'smsList'          => 'api/sms/sms-list'
+            ,'deleteSMS'        => 'api/sms/delete-sms'
+            ,'sendSMS'          => 'api/sms/send-sms'
+            ,'statistics'       => '/api/monitoring/traffic-statistics'
+            ,'status'           => '/api/monitoring/status'
+            ,'dataSwitch'       => '/api/dialup/dial'
+            ,'monthStatistics'  => '/api/monitoring/month_statistics'
         ],
     ];
 

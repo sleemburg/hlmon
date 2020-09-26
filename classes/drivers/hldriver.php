@@ -21,14 +21,15 @@ abstract class Hldriver implements Http, iCurl
 
     const ENDPOINTS    = [
         1 => [
-             'sesTokInfo'   => 'api/webserver/SesTokInfo'
-            ,'smsCount'     => 'api/sms/sms-count'
-            ,'smsList'      => 'api/sms/sms-list'
-            ,'deleteSMS'    => 'api/sms/delete-sms'
-            ,'sendSMS'      => 'api/sms/send-sms'
-            ,'statistics'   => '/api/monitoring/traffic-statistics'
-            ,'status'       => '/api/monitoring/status'
-            ,'dataSwitch'   => '/api/dialup/mobile-dataswitch'
+             'sesTokInfo'       => 'api/webserver/SesTokInfo'
+            ,'smsCount'         => 'api/sms/sms-count'
+            ,'smsList'          => 'api/sms/sms-list'
+            ,'deleteSMS'        => 'api/sms/delete-sms'
+            ,'sendSMS'          => 'api/sms/send-sms'
+            ,'statistics'       => '/api/monitoring/traffic-statistics'
+            ,'status'           => '/api/monitoring/status'
+            ,'dataSwitch'       => '/api/dialup/mobile-dataswitch'
+            ,'monthStatistics'  => '/api/monitoring/month_statistics'
         ],
     ];
 
@@ -52,7 +53,7 @@ abstract class Hldriver implements Http, iCurl
 
     public function __construct($options=NULL)
     {
-        $this->setApiVersion(self::DEFAULT_API_VERSION);
+        $this->setApiVersion(static::DEFAULT_API_VERSION);
     }
 
     public function smsCount()
@@ -61,6 +62,15 @@ abstract class Hldriver implements Http, iCurl
             return FALSE;
 
         return $data['LocalInbox'] ?? 0;
+    }
+
+    public function monthStatistics()
+    {
+        if (($data = $this->getCmd(__FUNCTION__)) === FALSE)
+            return FALSE;
+
+    print_r($data).PHP_EOL;
+        return $data;
     }
 
     public function dataSwitch($state='on')
@@ -147,7 +157,7 @@ abstract class Hldriver implements Http, iCurl
     */
     public function getVersion()
     {
-        return self::VERSION;
+        return static::VERSION;
     }
 
     /**
@@ -185,24 +195,24 @@ abstract class Hldriver implements Http, iCurl
             return FALSE;
         }
 
-        if ($method == self::GET 
-        ||  $method == self::PATCH)
+        if ($method == static::GET 
+        ||  $method == static::PATCH)
         {
             if (is_array($data))
                 $data = NULL;
         }
 
         $this->headers = [ 
-            sprintf(self::HEADERS[self::HDR_X_REQWITH])
-            ,sprintf(self::HEADERS[self::HDR_X_CONTYPE])
-            ,sprintf(self::HEADERS[self::HDR_X_RESPONSE])
+            sprintf(static::HEADERS[static::HDR_X_REQWITH])
+            ,sprintf(static::HEADERS[static::HDR_X_CONTYPE])
+            ,sprintf(static::HEADERS[static::HDR_X_RESPONSE])
             ];
     
         if ($this->cookie !== NULL)
-            $this->headers[] = sprintf(self::HEADERS[self::HDR_X_COOKIE]
+            $this->headers[] = sprintf(static::HEADERS[static::HDR_X_COOKIE]
                             , $this->cookie);
         if ($this->token !== NULL)
-            $this->headers[] = sprintf(self::HEADERS[self::HDR_X_TOKEN]
+            $this->headers[] = sprintf(static::HEADERS[static::HDR_X_TOKEN]
                             , $this->token);
     }
 
@@ -219,7 +229,7 @@ abstract class Hldriver implements Http, iCurl
     public function getSesInfo()
     {
         $api = static::ENDPOINTS[$this->apiVersion]['sesTokInfo'];
-        if (($data = $this->curl(self::GET, self::SCHEME, $api)) === FALSE)
+        if (($data = $this->curl(static::GET, static::SCHEME, $api)) === FALSE)
             return FALSE;
 
         $data = $this->xml2array($data);
@@ -243,7 +253,7 @@ abstract class Hldriver implements Http, iCurl
 
         $this->getSesInfo();
 
-        if (($data = $this->curl(self::GET, self::SCHEME, $api)) === FALSE)
+        if (($data = $this->curl(static::GET, static::SCHEME, $api)) === FALSE)
             return FALSE;
 
         $data = $this->xml2array($data);
@@ -259,7 +269,7 @@ abstract class Hldriver implements Http, iCurl
 
         $this->getSesInfo();
 
-        if (($data = $this->curl(self::POST, self::SCHEME, $api, $data)) === FALSE)
+        if (($data = $this->curl(static::POST, static::SCHEME, $api, $data)) === FALSE)
             return FALSE;
 
         return $this->xml2array($data);

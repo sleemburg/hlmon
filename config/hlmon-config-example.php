@@ -124,9 +124,19 @@ $config['phonebook'] = [
 | Each phonenumber must have a 'methods' array of methods.
 | The only default supported method is (native) sms.
 | other methods may be introduced, like sending with signal-cli
+|
+| An optional 'senders' array may be supplied with patterns. A pattern can be
+| negated by prefixing it with an exclamation mark (!). The list is travelled
+| and the first match wins. Remember if negations are used an those need to be
+| excluded, but the rest should be relayed to add a last '*' element.
 */
 $config['relaybook'] = [
 	 '+316XXXXXXXX' => [ 'methods' => [ 'sms', 'signal' ] ]
+
+        # Do not relay messages from +31681234567, but relay all others
+	,'+31688XXXXXX' => [ 'methods' => [ 'sms' ]
+                           , 'senders' => [ '!+31681234567', '*' ] ]
+
 ];
 
 /* 

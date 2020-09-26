@@ -1,25 +1,57 @@
 <?php
 /** -----------------------------------------------------------------------------
- * PDX-License-Identifier: GPL-2.0-or-later
- *
  * @package     Curl trait
  * @author      Stephan Leemburg <stephan@it-functions.nl>
  * @copyright   Copyright (c) 2020, IT Functions
  * ------------------------------------------------------------------------------
  * When using this trait, also implement the Http and iCurl interfaces
+ *
+ * with:
+ *   require_once PATH_TO.'/interfaces/Http.php';
+ *   require_once PATH_TO.'/interfaces/iCurl.php';
+ * 
+ * where:
+ *   PATH_TO is your path to the interfaces directory
+ *
+ * and
+ *    implements Http, iCurl
+ *
+ * then
+ *    use tCurl;
  * ------------------------------------------------------------------------------
  */
 
+if (!function_exists('hrtime')) {
+    function hrtime(bool $get_as_number = FALSE)
+    {
+        if ($get_as_number) // convert to nanoseconds
+            return (int) (microtime(TRUE) * 1e+6 );
+
+        $m = microtime(TRUE);
+        $int = $m > 0 ? floor($m) : ceil($m);
+        $dec = (int) (($m - $int) * 1e+8) / 1;
+        return [ $dec, $int ];
+    }
+}
+
 trait tCurl
 {
-    private $domain        = NULL;
-    private $apiVersion    = NULL;
-    private $debugCurl    = FALSE;
-    private $lastError    = NULL;
+    private $domain     = NULL;
+    private $apiVersion = NULL;
+    private $debugCurl  = FALSE;
+    private $lastError  = NULL;
     private $headers    = NULL;
-    private $response    = self::RESPONSE;
-    private $lastCode    = NULL;
-    
+    private $response   = self::RESPONSE;
+    private $lastCode   = NULL;
+    private $curl_info  = [];
+
+    // performance timers
+    private $time_start             = 0;
+    private $time_end_validate      = 0;
+    private $time_end_initialize    = 0;
+    private $time_end_call          = 0;
+    private $time_end               = 0;
+
     private $schemes = [ self::HTTP, self::HTTPS ];
 
     /**
@@ -30,8 +62,8 @@ trait tCurl
      */
     public function setApiVersion(int $apiVersion)
     {
-        if (!is_int($apiVersion) 
-        || (int)$apiVersion <= 0 
+        if (!is_int($apiVersion)
+        || (int)$apiVersion <= 0
         || (int)$apiVersion > count(self::ENDPOINTS))
             throw new Exception(__CLASS__.'::'.__FUNCTION__
                 .': invalid api version provided ('.$apiVersion.')');
@@ -41,7 +73,7 @@ trait tCurl
 
     /**
      * Returns the api version to use in calls
-     * 
+     *
      * @return Int | NULL
      */
     public function getApiVersion()
@@ -51,7 +83,7 @@ trait tCurl
 
     /**
      * Sets curl debug on or off
-     * 
+     *
      * @param Boolean
      */
     public function setDebugCurl($on=TRUE)
@@ -61,7 +93,7 @@ trait tCurl
 
     /**
      * Returns curl debug state
-     * 
+     *
      * @return Boolean
      */
     public function getDebugCurl()
@@ -71,7 +103,7 @@ trait tCurl
 
     /**
      * Sets the endpoint FQDN
-     * 
+     *
      * @param String
      */
     public function setDomain(string $domain)
@@ -86,7 +118,7 @@ trait tCurl
 
     /**
      * Returns the endpoint FQDN
-     * 
+     *
      * @return String
      */
     public function getDomain()
@@ -110,7 +142,7 @@ trait tCurl
 
     /**
      * Returns the last ResponseCode
-     * 
+     *
      * @return Integer or False if no responseCode yet
      */
     public function getResponseCode()
@@ -120,7 +152,7 @@ trait tCurl
 
     /**
      * Returns the last error
-     * 
+     *
      * @return String
      */
     public function getError()
@@ -130,7 +162,7 @@ trait tCurl
 
     /**
      * Validates the context for curl calls
-     * 
+     *
      * @return Boolean
      */
     public function validateState()
@@ -140,7 +172,7 @@ trait tCurl
 
     /**
      * substitutes variable placeholders (like {id}) with actual values
-     * 
+     *
      * @return String with substituted variables
      */
     public function substitute(string $in, array $vars)
@@ -153,6 +185,37 @@ trait tCurl
         return $out;
     }
 
+    public function getInfo()
+    {
+        return $this->curl_info;
+    }
+
+    public function getPerformance()
+    {
+        if ($this->time_start === 0)
+            return [];
+
+        if ($this->time_end_validate === 0)
+            $this->time_end_validate = $this->time_start;
+
+        if ($this->time_end_initialize === 0)
+            $this->time_end_initialize = $this->time_end_validate;
+
+        if ($this->time_end_call === 0)
+            $this->time_end_call = $this->time_end_initialize;
+
+        if ($this->time_end === 0)
+            $this->time_end = $this->time_end_call;
+
+        return [ 
+            'total_run_time' => ($this->time_end - $this->time_start) / 1e+6,
+            'total_validation_time' => ($this->time_end_validate - $this->time_start) / 1e+6,
+            'total_initialization_time' => ($this->time_end_initialize - $this->time_end_validate) / 1e+6,
+            'total_execution_time' => ($this->time_end_call - $this->time_end_initialize) / 1e+6,
+            'total_output_time' => ($this->time_end - $this->time_end_call) / 1e+6
+            ];
+    }
+
     /* -----------------------------------------------------------------------
      * Private methods
      * -----------------------------------------------------------------------
@@ -160,7 +223,7 @@ trait tCurl
 
     /**
      * Validates the scheme for curl calls
-     * 
+     *
      * @param String
      * @return Boolean
      */
@@ -174,7 +237,7 @@ trait tCurl
     }
     /**
      * Sets the last error
-     * 
+     *
      * @param String
      */
     protected function setError($err)
@@ -185,6 +248,12 @@ trait tCurl
 
     private function curl(string $method, string $scheme, string $uri, $data=NULL)
     {
+        $this->time_start = hrtime(TRUE);
+        $this->time_end_validate = 0;
+        $this->time_end_initialize = 0;
+        $this->time_end_call = 0;
+        $this->time_end = 0;
+
         $this->response = self::RESPONSE;
 
         if (!$this->validateState())
@@ -198,6 +267,8 @@ trait tCurl
             $this->setError('invalid scheme: ['.$scheme.']');
             return FALSE;
         }
+
+        $this->time_end_validate = hrtime(TRUE);
 
         // remove scheme://domain from uri
         foreach ($this->schemes as $s)
@@ -252,7 +323,7 @@ trait tCurl
         case self::PATCH:
             $defaults[CURLOPT_CUSTOMREQUEST] = $method;
             $defaults[CURLOPT_POSTFIELDS] = $data;
-            
+
             if ($this->debugCurl)
             {
                 if (is_string($data))
@@ -276,7 +347,7 @@ trait tCurl
 
         $h = curl_init();
 
-        if ($this->debugCurl) 
+        if ($this->debugCurl)
         {
             ob_start();
 
@@ -289,9 +360,14 @@ trait tCurl
         &&  is_array($this->headers))
             curl_setopt($h, CURLOPT_HTTPHEADER, $this->headers);
 
+        $this->time_end_initialize = hrtime(TRUE);
+
         $r = curl_exec($h);
-        $this->lastCode = $code = (int)curl_getinfo($h, CURLINFO_RESPONSE_CODE);
+        $this->curl_info = curl_getinfo($h);
+        $this->lastCode = $code = (int)($this->curl_info['http_code'] ?? 501);
         curl_close($h);
+
+        $this->time_end_call = hrtime(TRUE);
 
         $this->response['request']['domain'] = $this->getDomain();
         $this->response['request']['send_headers'] = $this->headers;
@@ -316,16 +392,17 @@ trait tCurl
             {
                 $a = explode(':', $row, 2);
 
-                $this->response['headers'][$a[0]] = (count($a) > 1 
+                $this->response['headers'][$a[0]] = (count($a) > 1
                                     ? $a[1] : '');
             }
             else
                 $this->response['body'] .= $row;
-
         }
 
-        if ($this->debugCurl) 
+        if ($this->debugCurl)
         {
+            echo ob_get_clean().PHP_EOL;
+
             if ($data !== NULL)
             {
                 echo 'Data:'.PHP_EOL;
@@ -335,22 +412,24 @@ trait tCurl
             print_r($this->response);
         }
 
+        $this->time_end = hrtime(TRUE);
+
         switch ($method)
         {
         case self::GET:
         case self::DELETE:
-            return ($code === self::HTTP_OK 
-                ? $this->response['body'] 
+            return ($code === self::HTTP_OK
+                ? $this->response['body']
                 : FALSE);
 
         case self::PUT:
         case self::POST:
         case self::PATCH:
-            return ($code === self::HTTP_OK 
+            return ($code === self::HTTP_OK
                  || $code === self::HTTP_CREATED
                  || $code === self::HTTP_ACCEPTED
                  || $code === self::HTTP_NO_CONTENT
-                ? $this->response['body'] 
+                ? $this->response['body']
                 : FALSE);
         }
     }
