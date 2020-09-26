@@ -21,20 +21,6 @@ if (is_array($options) && count($options) > 0)
     }
     switch (strtolower(trim($options['c'])))
     {
-    case 'sms':
-        $ok = true;
-        foreach (['r', 'm'] as $key)
-            if (($options[$key] ?? FALSE) === FALSE)
-            {
-                echo "Required option -{$key} not present\n";
-                $ok = false;
-            }
-        if (!$ok)
-            exit;
-
-        $mon = new Hlmon();
-        return $mon->sendSMS($options['r'], $options['m']);
-
     case 'monitor':
         break;
 

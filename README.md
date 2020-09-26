@@ -65,10 +65,12 @@ After that the systemd hlmon unit file can be installed and enabled with
 
     bash examples/hlmon-unit.sh
 
-# Known Issues
+# Commands
 
-Sometimes the connect script fails because of timing issues in setting up the rest
-of the connection. Tracking and restarting of the command needs to be improved.
+There are two 'commands':
+
+ * /opt/hlmon/hlmon.php : this is the monitoring code
+ * /opt/hlmon/hlcmd.php : this is the cli for sending manual sms and (dis)connecting manually
 
 # Recomended setup
 
