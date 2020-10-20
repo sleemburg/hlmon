@@ -35,6 +35,9 @@ class Hlmon extends Hlbase
     const STR_STATUS        = 'status';
     const STR_SMS           = 'sms';
 
+    const MAX_SMS_RETRY     = 5;
+    const SMS_RETRY_SLEEP   = 2;
+
     const CMD_FILE          = __DIR__.'/../commands.txt';
 
     const cmdmap = [
@@ -274,8 +277,29 @@ class Hlmon extends Hlbase
                 {
                 case self::STR_SMS:
                     $msg['X-Actions'][] = 'Relay via sms to '.$phone;
-                    $this->log('Relaying message via sms to: '.$phone);
-                    $this->sendSMS($phone, $m);
+                    
+                    for ($i = 0; $i < self::MAX_SMS_RETRY; $i++)
+                    {
+                        $this->log('Relaying message via sms to: '.$phone);
+                        if (($ret = $this->sendSMS($phone, $m)) === FALSE)
+                        {
+                                $this->log("Error sendSMS({$phone})");
+                                break;
+                        }
+
+                        // send succeeded
+                        if (($ret[0] ?? 'NOK') === 'OK')
+                        {
+                            $this->log("SMS Send to {$phone}");
+                            break;
+                        }
+
+                        // send failed, sleep and retry
+                        $this->log('Temporary sendSMS Failure ('
+                                .($ret['code'] ?? 'unknown error').')');
+
+                        sleep(self::SMS_RETRY_SLEEP);
+                    }
                     break;
 
                 default:
