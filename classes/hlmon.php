@@ -253,7 +253,7 @@ class Hlmon extends Hlbase
                 foreach($options['senders'] as $sender)
                 {
                     $pattern = trim($sender);
-                    if (($negate = $pattern{0} === '!'))
+                    if (($negate = $pattern[0] === '!'))
                         $pattern = substr($pattern, 1);
 
                     if ($match = $pattern === '*'
