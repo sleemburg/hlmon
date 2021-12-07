@@ -8,6 +8,7 @@
 
 require_once __DIR__.'/hilink.php';
 require_once __DIR__.'/hlbase.php';
+require_once __DIR__.'/argparser.php';
 
 class Hlmon extends Hlbase
 {
@@ -34,6 +35,9 @@ class Hlmon extends Hlbase
     const STR_STATUS        = 'status';
     const STR_SMS           = 'sms';
 
+    const MAX_SMS_RETRY     = 5;
+    const SMS_RETRY_SLEEP   = 2;
+
     const CMD_FILE          = __DIR__.'/../commands.txt';
 
     const cmdmap = [
@@ -57,7 +61,6 @@ class Hlmon extends Hlbase
     {
         while (!$this->stopRunning)
         {
-            $this->reap();
 
             if ($this->state == self::STATE_CONNECTED
             && ($ret = $this->checkCommand() !== TRUE))
@@ -65,6 +68,9 @@ class Hlmon extends Hlbase
                 $this->dbg('Command stopped with exitcode: '.$ret);
                 $this->startCommand();
             }
+
+            // collect all exit statuses of the once that passed away..
+            $this->reap();
 
             // are there manual commands to perform?
             if (is_file(self::CMD_FILE))
@@ -240,13 +246,60 @@ class Hlmon extends Hlbase
                 $this->log('Not relaying to sender '.$phone);
                 continue;
             }
+            // only relay for some senders?
+            if (is_array($options['senders'] ?? NULL))
+            {
+                $match = FALSE;
+                foreach($options['senders'] as $sender)
+                {
+                    $pattern = trim($sender);
+                    if (($negate = $pattern[0] === '!'))
+                        $pattern = substr($pattern, 1);
+
+                    if ($match = $pattern === '*'
+                    || ($match = preg_match('/^\\'.$pattern.'$/', $msg['Phone'])))
+                    {
+                        $match = $match && !$negate;
+                        break;
+                    }
+                }
+                
+                if (!$match)
+                {
+                    $this->log('Not relaying to '.$phone
+                              .' from '.$msg['Phone'].' based on sender pattern');
+                    continue;
+                }
+            }
+
             foreach ($options['methods'] as $method)
                 switch (strtolower(trim($method)))
                 {
                 case self::STR_SMS:
                     $msg['X-Actions'][] = 'Relay via sms to '.$phone;
-                    $this->log('Relaying message via sms to: '.$phone);
-                    $this->sendSMS($phone, $m);
+                    
+                    for ($i = 0; $i < self::MAX_SMS_RETRY; $i++)
+                    {
+                        $this->log('Relaying message via sms to: '.$phone);
+                        if (($ret = $this->sendSMS($phone, $m)) === FALSE)
+                        {
+                                $this->log("Error sendSMS({$phone})");
+                                break;
+                        }
+
+                        // send succeeded
+                        if (($ret[0] ?? 'NOK') === 'OK')
+                        {
+                            $this->log("SMS Send to {$phone}");
+                            break;
+                        }
+
+                        // send failed, sleep and retry
+                        $this->log('Temporary sendSMS Failure ('
+                                .($ret['code'] ?? 'unknown error').')');
+
+                        sleep(self::SMS_RETRY_SLEEP);
+                    }
                     break;
 
                 default:
@@ -370,12 +423,8 @@ class Hlmon extends Hlbase
 
             $cmds = $this->config['command'];
 
-            if ($cmds['path'] ?? FALSE)
-                $this->pexec($cmds);
+            $this->pexec($cmds);
             
-            $this->dbg("Spawning {$cmds}");
-            pcntl_exec($cmds);
-
             // the child will only reach this point on exec failure
             exit(255);
 
@@ -423,6 +472,18 @@ class Hlmon extends Hlbase
 
     protected function pexec($cmd)
     {
+        // just a string, then compose path and args
+        if (!isset($cmd['path']))
+        {
+            $o = new ArgvParser($cmd);
+            $a = $o->parse();
+            $path = $a[0];
+            $args = array_splice($a, -(count($a)-1));
+            $cmd = [ 'path' => $path, 'args' => $args ];
+
+            // garbage collect
+            $o = NULL;
+        }
         $this->dbg("Spawning {$cmd['path']}");
 
         if(($cmd['args'] ?? NULL) !== NULL

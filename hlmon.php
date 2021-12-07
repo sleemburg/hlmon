@@ -21,20 +21,6 @@ if (is_array($options) && count($options) > 0)
     }
     switch (strtolower(trim($options['c'])))
     {
-    case 'sms':
-        $ok = true;
-        foreach (['r', 'm'] as $key)
-            if (($options[$key] ?? FALSE) === FALSE)
-            {
-                echo "Required option -{$key} not present\n";
-                $ok = false;
-            }
-        if (!$ok)
-            exit;
-
-        $mon = new Hlmon();
-        return $mon->sendSMS($options['r'], $options['m']);
-
     case 'monitor':
         break;
 
@@ -43,7 +29,8 @@ if (is_array($options) && count($options) > 0)
     case 'reset':
         $cmd = 'echo '.strtolower(trim($options['c'])).' > '.__DIR__.'/commands.txt';
 
-        // put the command in the commands file
+        // put the command in the commands file, so that hlmon can pick it up
+        // and update it's stat accordingly
         `{$cmd}`;
 
         exit;

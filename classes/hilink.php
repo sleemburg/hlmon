@@ -72,6 +72,11 @@ class Hilink
         return $this->driver->deleteSMS($id);
     }
 
+    public function monthStatistics()
+    {
+        return $this->driver->monthStatistics();
+    }
+
     public function statistics()
     {
         return $this->driver->statistics();
@@ -112,6 +117,17 @@ class Hilink
         return $this->driver->getDebug();
     }
     
+    /**
+     * Sets curl debug on or off
+     * 
+     * @param Boolean
+     */
+    public function setDebugCurl($on=TRUE)
+    {
+        $this->driver->setDebugCurl($on);
+    }
+
+
     /**
      * Returns the last Error msg, if any
      * 

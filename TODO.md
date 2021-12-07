@@ -1,6 +1,6 @@
 # Planned changes
 
- * Parse string commands into pcntl_exec path and args array
  * Support multiple commands, tracking them in a 'subprocess' array
- * Support modems via the serial USB device with the Hayes commandset
+ * Support profiles, enabling multiple users to connect using different commands
+ * Implement signal-cli, email multiplexing
 

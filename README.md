@@ -9,9 +9,9 @@
 This code can monitor cheap Huawei HiLink USB modems. It can be used as a SMS repeater.
 So any SMS received on the SIM in the modem will be repeated to a list of other 
 recipients. This can be SMS, Email, Signal (or anything else that you can implement, 
-even MQTT.
+even MQTT).
 
-It can also be used as a fallback router. Sending an SMS with 'connect' will enable 
+It can also be used as a fallback router. Sending a SMS with 'connect' will enable 
 the mobile data on the modem and can then alter routes or start a program.
 
 I use it on two different locations. One location as a SMS 'gateway' and on the other
@@ -65,10 +65,12 @@ After that the systemd hlmon unit file can be installed and enabled with
 
     bash examples/hlmon-unit.sh
 
-# Known Issues
+# Commands
 
-Sometimes the connect script fails because of timing issues in setting up the rest
-of the connection. Tracking and restarting of the command needs to be improved.
+There are two 'commands':
+
+ * /opt/hlmon/hlmon.php : this is the monitoring code
+ * /opt/hlmon/hlcmd.php : this is the cli for sending manual sms and (dis)connecting manually
 
 # Recomended setup
 
@@ -126,7 +128,7 @@ I have tested the code on my own 2 Huawei USB modems, these are:
 
     Device name: E3531
 
-# Testing without sending an sms
+# Testing without sending a sms
 
 The basic commands: {connect, disconnect, reset} can be tested by echoing the
 command to the hlmon directory into a file named commands.txt. For example to force

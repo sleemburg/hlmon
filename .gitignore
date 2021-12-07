@@ -1,4 +1,18 @@
+# we never commit your SMS messages into the repo
 sms/*
+
+# your specific config is never included in git
 config/hlmon.php
+
+# your own scripts that can be called from the config
 scripts/*
+
+# runtime command injection
 commands.txt
+
+# I always use x named files for testing...
+x.php
+
+# vi swap files
+
+*.swp
