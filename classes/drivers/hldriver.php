@@ -30,6 +30,7 @@ abstract class Hldriver implements Http, iCurl
             ,'status'           => '/api/monitoring/status'
             ,'dataSwitch'       => '/api/dialup/mobile-dataswitch'
             ,'monthStatistics'  => '/api/monitoring/month_statistics'
+            ,'information'      => '/api/device/information'
         ],
     ];
 
@@ -71,6 +72,28 @@ abstract class Hldriver implements Http, iCurl
 
     print_r($data).PHP_EOL;
         return $data;
+    }
+
+    public function information()
+    {
+        if (($data = $this->getCmd(__FUNCTION__)) === FALSE)
+            return FALSE;
+
+    print_r($data).PHP_EOL;
+        return $data;
+    }
+
+    public function wanipv4()
+    {
+        if (($data = $this->getCmd('information')) === FALSE)
+            return FALSE;
+
+        $ipv4 = ($data['WanIPAddress'] ?? NULL);
+
+        if (is_string($ipv4))
+            return $ipv4;
+
+        return NULL;
     }
 
     public function dataSwitch($state='on')
