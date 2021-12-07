@@ -77,6 +77,16 @@ class Hilink
         return $this->driver->monthStatistics();
     }
 
+    public function information()
+    {
+        return $this->driver->information();
+    }
+
+    public function wanipv4()
+    {
+        return $this->driver->wanipv4();
+    }
+
     public function statistics()
     {
         return $this->driver->statistics();

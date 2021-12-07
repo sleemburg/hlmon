@@ -53,6 +53,23 @@ case 'disconnect':
 case 'month':
     return $hlcmd->monthstatistics();
 
+case 'information':
+    return $hlcmd->information();
+
+case 'wanipv4':
+    if (($ipv4 = $hlcmd->wanipv4()) === NULL)
+    {
+        echo "Not connected\n";
+        exit(1);
+    }
+    else if ($ipv4 === FALSE)
+    {
+        echo "Error retrieving information from device\n";
+        exit(2);
+    }
+    echo "{$ipv4}\n";
+    exit(0);
+
 default:
     echo "Unexpected value for option -c ({$options['c']})\n";
     exit;
