@@ -237,7 +237,7 @@ class Hlmon extends Hlbase
             return self::ACT_IGNORE;
         }
 
-        $m = $msg['Content'].' [From '.$msg['Phone'].' on '.$msg['Date'].']';
+        $m = htmlentities($msg['Content'].' [From '.$msg['Phone'].' on '.$msg['Date'].']');
         foreach ($this->config['relaybook'] as $phone => $options)
         {
             if ($phone == $msg['Phone'] 
